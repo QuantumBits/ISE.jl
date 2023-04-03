@@ -1,0 +1,17 @@
+name = "ISE"
+uuid = "4af3a193-94f9-498f-8832-8ca8d2599963"
+authors = ["Jesse Campbell <jessec@mpbell.me>"]
+version = "0.1.0"
+
+[deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+DynamicalSystems = "61744808-ddfa-5f27-97ff-6e42cc95d634"
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+PlotlyBase = "a03496cd-edff-5a9b-9e67-9cda94a718b5"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+ProfileView = "c46f51b8-102a-5cf2-8d2c-8597cb0e0da7"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SatelliteToolbox = "6ac157d9-b43d-51bb-8fab-48bf53814f4a"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"

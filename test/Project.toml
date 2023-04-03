@@ -1,0 +1,4 @@
+name = "TestISE"
+uuid = "1cccc595-f06b-483a-92f2-f6b2a204c72b"
+authors = ["Jesse Campbell <jessec@mpbell.me>"]
+version = "0.1.0"
