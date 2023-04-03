@@ -116,11 +116,12 @@ function run_stuff(duration::Time = 1.0u"hr", Δt::Time = 0.1u"s")
     t0 = 0.0u"s"
     ϵ0 = norm(v0)^2 / 2 - μE / norm(r0)
 
-    Isp = 425.0u"s"
+    # VASIMR
+    Isp = 4900.0u"s" * 0.72 # (72% efficiency)
     g0 = 9.80665u"m/s^2"
-    dmdt = 1.0u"kg/s"
-    m_dry = 2000.0u"kg"
-    m_prop = 6000.0u"kg"
+    dmdt = 107.0u"mg/s"
+    m_dry = 3500.0u"kg"
+    m_prop = 310.0u"kg"
 
     # Bus Initialization
 
@@ -148,7 +149,7 @@ function run_stuff(duration::Time = 1.0u"hr", Δt::Time = 0.1u"s")
         ORB_MODEL(orb_c, orb_p, orb_o),
         GPS_MODEL(gps_c, gps_p, gps_o),
         GNC_MODEL(gnc_c, gnc_p, gnc_o),
-        1.0u"s")
+        Δt)
 
     ise = DynamicalSystems.ArbitrarySteppable(m, ISE.sim!, ISE.extract_state, ISE.extract_parameters, ISE.reset_model!)
 
@@ -164,7 +165,7 @@ function plot_stuff(trajectory)
 
     X, t = trajectory
 
-    t = uconvert.(u"minute", X[:, 1]u"s")
+    t = uconvert.(u"d", X[:, 1]u"s")
     rX = X[:, 2]u"m"
     rY = X[:, 3]u"m"
     rZ = X[:, 4]u"m"
