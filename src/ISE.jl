@@ -8,12 +8,26 @@ using SatelliteToolbox
 using BenchmarkTools, Plots, GLMakie
 
 include("Types.jl")
-include("GNC.jl")
-include("GPS.jl")
-include("ORB.jl")
-include("THR.jl")
-
 using .Types
+
+#! include("GNC.jl")
+#! 
+#! struct GNC_MODEL
+#!     c::GNC.commands
+#!     p::GNC.parameters
+#!     o::GNC.output
+#! end
+
+include("LibGNC.jl")
+
+struct GNC_MODEL
+    c::LibGNC.commands
+    p::LibGNC.parameters
+    o::LibGNC.output
+end
+
+
+include("THR.jl")
 
 struct THR_MODEL
     c::THR.commands
@@ -21,11 +35,15 @@ struct THR_MODEL
     o::THR.output
 end
 
+include("ORB.jl")
+
 struct ORB_MODEL
     c::ORB.commands
     p::ORB.parameters
     o::ORB.output
 end
+
+include("GPS.jl")
 
 struct GPS_MODEL
     c::GPS.commands
@@ -33,11 +51,6 @@ struct GPS_MODEL
     o::GPS.output
 end
 
-struct GNC_MODEL
-    c::GNC.commands
-    p::GNC.parameters
-    o::GNC.output
-end
 
 mutable struct ISE_MODEL
     thr::THR_MODEL
@@ -88,11 +101,14 @@ function sim!(m::ISE_MODEL)
     gps_o, gps_c = GPS.step(gps_i, gps_c, m.gps.p)
 
     # GNC
-    #TODO: replace with GNC.c call to gnc_step
 
-    gnc_i = GNC.input(gps_o.r_est, gps_o.v_est, thr_o.m_prop)
-    gnc_c = GNC.commands()
-    gnc_o, gnc_c = GNC.step(gnc_i, gnc_c, m.gnc.p)
+    #! gnc_i = GNC.input(gps_o.r_est, gps_o.v_est, thr_o.m_prop)
+    #! gnc_c = GNC.commands()
+    #! gnc_o, gnc_c = GNC.step(gnc_i, gnc_c, m.gnc.p)
+
+    gnc_i = LibGNC.input(Tuple(ustrip.(upreferred.(gps_o.r_est))), Tuple(ustrip.(upreferred.(gps_o.v_est))), ustrip(upreferred(thr_o.m_prop)))
+    gnc_c = LibGNC.commands(false)
+    gnc_o = LibGNC.step(Ref(gnc_i), Ref(gnc_c), Ref(m.gnc.p))
 
     m.thr = THR_MODEL(thr_c, m.thr.p, thr_o)
     m.orb = ORB_MODEL(orb_c, m.orb.p, orb_o)
@@ -101,7 +117,7 @@ function sim!(m::ISE_MODEL)
 
 end
 
-function run_stuff(duration::Time = 1.0u"hr", Δt::Time = 0.1u"s")
+function run_stuff(duration::Time=1.0u"hr", Δt::Time=0.1u"s")
 
     # Initial Conditions
 
@@ -140,9 +156,13 @@ function run_stuff(duration::Time = 1.0u"hr", Δt::Time = 0.1u"s")
         MersenneTwister(3), 1.0u"μs")
     gps_o = GPS.output(r0, v0, t0)
 
-    gnc_c = GNC.commands()
-    gnc_p = GNC.parameters(μE)
-    gnc_o = GNC.output(false, SVector(0.0, 0.0, 0.0), ϵ0)
+    #! gnc_c = GNC.commands()
+    #! gnc_p = GNC.parameters(μE)
+    #! gnc_o = GNC.output(false, SVector(0.0, 0.0, 0.0), ϵ0)
+
+    gnc_c = LibGNC.commands(false)
+    gnc_p = LibGNC.parameters(ustrip(upreferred(μE)))
+    gnc_o = LibGNC.output(false, (0.0, 0.0, 0.0), ustrip(upreferred(ϵ0)))
 
     m = ISE_MODEL(
         THR_MODEL(thr_c, thr_p, thr_o),
@@ -179,9 +199,9 @@ function plot_stuff(trajectory)
 
     plotly()
 
-    p_ϵ = Plots.plot(t, ϵ, color = :red, label = "ϵ")
-    p_m_prop = Plots.plot(t, m_prop, color = :blue, label = "m_prop", 
-        ylims = (0.0u"kg", maximum(m_prop)))
+    p_ϵ = Plots.plot(t, ϵ, color=:red, label="ϵ")
+    p_m_prop = Plots.plot(t, m_prop, color=:blue, label="m_prop",
+        ylims=(0.0u"kg", maximum(m_prop)))
     Plots.plot(p_ϵ, p_m_prop)
 end
 
@@ -219,7 +239,7 @@ function viz_stuff(trajectory)
     # earth_img = GLMakie.load(download("https://svs.gsfc.nasa.gov/vis/a000000/a002900/a002915/bluemarble-2048.png"))
     # mesh!(fig, Sphere(Point3f(0), 1.0), color=earth_img, shading = true)
 
-    FR = floor(Int, min(length(t) / 6, 120))
+    FR = 3000 # floor(Int, min(length(t), 120))
     TI = floor(Int, length(t) / FR)
 
     record(fig, "orbit.mp4", 1:TI:length(t); framerate=FR) do f
